@@ -1,6 +1,14 @@
 <?php
+$dsn = 'mysql:dbname=todo;host=localhost';
+$user = 'root';
+$password = '';
+$dbh = new PDO($dsn, $user, $password);
+$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$dbh->query('SET NAMES utf8');
 
-
+$sql = 'SELECT * FROM tasks';
+$stmt = $dbh->prepare($sql);
+$stmt->execute();
 ?>
 
 <!DOCTYPE html>
@@ -18,8 +26,13 @@
   <h1>jQuery & Ajax & PHP Example</h1>
 
   <form method="post">
-    <input type="checkbox" id="">hoge</span><br>
-    <input type="checkbox" id="">fuga</span><br>
+    <?php while($task = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+      <?php if($task['completed']): // ture (1) だったら ?>
+        <input type="checkbox" id="<?php echo $task['id']; ?>" checked="check"><span class="checked"><?php echo $task['title']; ?></span><br>
+      <?php else: ?>
+        <input type="checkbox" id="<?php echo $task['id']; ?>"><span><?php echo $task['title']; ?></span><br>
+      <?php endif; ?>
+    <?php endwhile; ?>
   </form>
 
   <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
@@ -36,7 +49,10 @@
     $('input').click(function()
     {
       //POSTメソッドで送るデータを定義します var data = {パラメータ名 : 値};
-      var data = "ほげ";
+      var id = $(this).attr('id');
+      console.log(id);
+
+      var data = {task_id : id};
 
       /**
        * Ajax通信メソッド
@@ -54,9 +70,16 @@
        */
       }).done(function(data) {
         // Ajax通信が成功した場合に呼び出される
+        // dataにsend_templete.phpからechoされたjsonデータが入る
 
-        // PHPから返ってきたデータの表示
-        alert(data);
+        // jsonデータをjsの配列データに変換してvar dataに代入
+        var data = JSON.parse(data);
+
+        // clickしたinputタグを取得し、スタイルの変更やチェックのon/offを切り替える
+        var element = document.getElementById(data['id']);
+        element.checked = data['completed'];
+
+        element.nextSibling.classList.toggle('checked');
 
       /**
        * Ajax通信が失敗した場合に呼び出されるメソッド
